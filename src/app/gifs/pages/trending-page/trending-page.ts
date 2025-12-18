@@ -1,6 +1,7 @@
-import { Component, computed, inject, Input, input, output, signal } from '@angular/core';
-import { GifList } from "../../components/gif-list/gif-list";
+import { AfterViewInit, Component, computed, ElementRef, inject, Input, input, output, signal, viewChild } from '@angular/core';
+  import { GifList } from "../../components/gif-list/gif-list";
 import { GifService } from '../../services/gifs.service';
+import { ScrollStateService } from 'src/app/shared/service/scroll-state.service';
 
 // const imageUrls: string[] = [
 //     "https://flowbite.s3.amazonaws.com/docs/gallery/square/image.jpg",
@@ -19,19 +20,44 @@ import { GifService } from '../../services/gifs.service';
 
 @Component({
   selector: 'app-trending-page',
-  imports: [GifList],
+  // imports: [GifList],
   templateUrl: './trending-page.html',
  
 
 })
-export default class TrendingPage { 
+export default class TrendingPage implements AfterViewInit{ 
   gifService = inject(GifService);
+  scrollStateService = inject(ScrollStateService);
   
+  scrollDivRef = viewChild<ElementRef<HTMLDivElement>>('groupDiv');
+
+  ngAfterViewInit(): void {
+    const scrollDiv = this.scrollDivRef()?.nativeElement;
+    if(!scrollDiv) return;
+
+    scrollDiv.scrollTop = this.scrollStateService.trendingScrollState();
+  }
+  onScroll(event: Event) {
+    const scrollDiv = this.scrollDivRef()?.nativeElement;
+    if(!scrollDiv) return;
+    const scrollTop = scrollDiv.scrollTop; 
+    const clienHeight = scrollDiv.clientHeight;
+    const scrollHeight = scrollDiv.scrollHeight;
+    // console.log({scrollTop, clienHeight, scrollHeight});
+    const isAtBottom = scrollTop + clienHeight + 300 >= scrollHeight;
+    // console.log({isAtBottom});
+    this.scrollStateService.trendingScrollState.set(scrollTop);
+
+
+
+    if (isAtBottom){
+      this.gifService.loadTrendingGifs();
+   }
+  }
+}
   // gifs = signal (imageUrls);
   // gifSignal = input<string>('');
   // gifSignal1 = output<string>();
 
   // gifs2!: string ; 
   // @Input() gifnosignal!: string ;
-
-}
